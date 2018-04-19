@@ -13,6 +13,7 @@ app.get('/', function (req, res) {
 io.on('connection', function (socket) {
   console.log('a client connected')
   socket.on('joinroom', function (data) {
+    console.log('joining room')
     let roomId = data.roomId
     socket.join(roomId, err => {
       if (err != null) console.log(err)
@@ -23,6 +24,21 @@ io.on('connection', function (socket) {
       console.log('disconnected', rooms)
       io.to(rooms).emit('broadcast', `${data.name} has disconnected`)
     })
+  })
+
+  socket.on('newOffer', function (data) {
+    console.log('new offer on server')
+    socket.broadcast.emit('receiveOffer', data)
+  })
+
+  socket.on('receiveAnswer', function (answer) {
+    console.log('answer received on server')
+    socket.broadcast.emit('receiveAnswer', answer)
+  })
+
+  socket.on('sendingCandidates', function (candidates) {
+    console.log('received candidate on server')
+    socket.broadcast.emit('receiveCandidates', candidates)
   })
 })
 
