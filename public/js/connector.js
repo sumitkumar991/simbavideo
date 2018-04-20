@@ -66,14 +66,6 @@ function invite () {
     vid1.srcObject = stream
     localStream = stream
     selfConn.addStream(localStream)
-
-    if (hasAddTrack) {
-      console.log("-- Adding tracks to the RTCPeerConnection")
-      localStream.getTracks().forEach(track => selfConn.addTrack(track, localStream));
-    } else {
-      console.log("-- Adding stream to the RTCPeerConnection")
-      selfConn.addStream(localStream)
-    }
   }
   hasAddTrack = selfConn.addTrack !== undefined
   navigator.mediaDevices.getUserMedia(constraints)
@@ -102,8 +94,8 @@ function handleAddStreamEvent (event) {
   vid1.srcObject = event.stream
 }
 function handleTrackEvent (event) {
-  console.log('*** Track event');
-  vid1.srcObject = event.streams[0];
+  console.log('*** Track event')
+  vid1.srcObject = event.streams[0]
 }
 function handleNegotiationOffer () {
   const offerOptions = {
@@ -117,25 +109,32 @@ function handleNegotiationOffer () {
     })
 }
 
-function handleVideoOffer (conn, offer) {
-  let _Offer = JSON.parse(offer)
-  let desc = new RTCSessionDescription(_Offer)
-  console.log(desc)
-  conn.setRemoteDescription(desc)
-    .then(
-      () => {
-        navigator.mediaDevices.getUserMedia(constraints)
-          .then(stream => {
-            vid1.srcObject = stream
-            return conn.addStream(stream)
-          }).catch(err => console.log(err))
-      },
-      err => console.log(err)
-    )
-}
+// function handleVideoOffer (conn, offer) {
+//   let _Offer = JSON.parse(offer)
+//   let desc = new RTCSessionDescription(_Offer)
+//   console.log(desc)
+//   // if (hasAddTrack) {
+//   //   console.log('-- Adding tracks to the RTCPeerConnection')
+//   //   localStream.getTracks().forEach(track => selfConn.addTrack(track, localStream))
+//   // } else {
+//   //   console.log('-- Adding stream to the RTCPeerConnection')
+//   //   selfConn.addStream(localStream)
+//   // }
+//   conn.setRemoteDescription(desc)
+//     .then(
+//       () => {
+//         navigator.mediaDevices.getUserMedia(constraints)
+//           .then(stream => {
+//             vid1.srcObject = stream
+//             return conn.addStream(stream)
+//           }).catch(err => console.log(err))
+//       },
+//       err => console.log(err)
+//     )
+// }
 
 function handleVideoAnswer (conn, answer) {
-  let ans = Json.parse(answer)
+  let ans = JSON.parse(answer)
   let desc = new RTCSessionDescription(ans)
   conn.setRemoteDescription(desc)
     .then(
@@ -144,8 +143,22 @@ function handleVideoAnswer (conn, answer) {
 }
 socket.on('receiveOffer', function (offer) {
   console.log('offer received')
-  let conn = invite()
-  handleVideoOffer(conn, offer)
+  let conn = new RTCPeerConnection(configuration)
+  peerConn = conn
+  //
+  let _Offer = JSON.parse(offer)
+  let desc = new RTCSessionDescription(_Offer)
+  console.log(desc)
+  conn.setRemoteDescription(desc)
+    .then(
+      () => {
+        return navigator.mediaDevices.getUserMedia(constraints)
+      },
+      err => console.log(err))
+    .then(stream => {
+      vid1.srcObject = stream
+      conn.addStream(stream)
+    })
     .then(() => conn.createAnswer())
     .then(x => {
       conn.setLocalDescription(x).then(
