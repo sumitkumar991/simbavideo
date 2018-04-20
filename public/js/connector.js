@@ -132,19 +132,19 @@ function handleNegotiationOffer () {
 //       err => console.log(err)
 //     )
 // }
-
+var client2 = null
 function handleVideoAnswer (conn, answer) {
   let ans = JSON.parse(answer)
   let desc = new RTCSessionDescription(ans)
   conn.setRemoteDescription(desc)
     .then(
-      () => console.log('remote desc set'),
+      () => console.log('remote desc set, connection established'),
       err => console.log(err))
 }
 socket.on('receiveOffer', function (offer) {
   console.log('offer received')
   let conn = new RTCPeerConnection(configuration)
-  peerConn = conn
+  client2 = conn
   //
   let _Offer = JSON.parse(offer)
   let desc = new RTCSessionDescription(_Offer)
@@ -171,7 +171,7 @@ socket.on('receiveOffer', function (offer) {
 
 socket.on('receiveAnswer', function (answer) {
   console.log('received answer on client')
-  handleVideoAnswer(peerConn, answer)
+  handleVideoAnswer(client2, answer)
 })
 
 socket.on('receiveCandidates', function (candidates) {
