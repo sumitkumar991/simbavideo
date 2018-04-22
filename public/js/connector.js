@@ -1,17 +1,5 @@
-var socket = io()
+let socket = io()
 let STUN_SERVER = 'stun:stun.l.google.com:19302'
-
-document.getElementById('connectBtn').addEventListener('click', (event) => {
-  // let user = document.getElementById('userName').value
-  // let roomId = document.getElementById('roomId').value
-  // socket.emit('joinroom', {user: user, roomId: roomId})
-  invite()
-})
-
-socket.on('broadcast', function (msg) {
-  console.log(msg)
-})
-
 let configuration = {
   'iceServers': [{
     'urls': 'stun:stun.l.google.com:19302'
@@ -20,165 +8,159 @@ let configuration = {
 let constraints = {
   video: true
 }
+
 let vid1 = document.getElementById('selfVideo')
+let vid2 = document.getElementById('otherVideo')
 
-// function establishConn () {
-//   let selfConn = new RTCPeerConnection(configuration)
-//   let localStream = null
+function sendToServer (msg) {
+  console.log('sending')
+  let str = JSON.stringify(msg)
+  socket.emit('request', str)
+}
 
-//   function handleStream (stream) {
-//     vid1.srcObject = stream
-//     localStream = stream
-//     selfConn.addStream(localStream)
-//   }
+socket.on('broadcast', function (msg) {
+  console.log(msg)
+})
 
-//   navigator.mediaDevices.getUserMedia(constraints)
-//     .then(handleStream).catch(x => console.log(x))
+let localStream = null
 
-//   selfConn.onicecandidate = event => {
-//     console.log('got candidates', event.candidate)
-//     if (event.candidate) {
-//       console.log('sending candidate')
-//       socket.emit('sendingCandidates', JSON.stringify(event.candidate))
-//     }
-//   }
-
-//   const offerOptions = {
-//     offerToReceiveVideo: 1
-//   }
-
-//   selfConn.createOffer(offerOptions)
-//     .then((x) => {
-//       console.log('created offer')
-//       selfConn.setLocalDescription(x)
-//       socket.emit('newOffer', JSON.stringify(x))
-//     })
-// }
-/// //////////////
-var peerConn = null
-var hasAddTrack = null
-function invite () {
-  let selfConn = new RTCPeerConnection(configuration)
-  let vid1 = document.getElementById('selfVideo')
-  let localStream = null
-
-  function handleStream (stream) {
-    vid1.srcObject = stream
+navigator.mediaDevices.getUserMedia(constraints)
+  .then(stream => {
     localStream = stream
-    selfConn.addStream(localStream)
-  }
-  hasAddTrack = selfConn.addTrack !== undefined
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then(handleStream).catch(x => console.log(x))
+    vid1.srcObject = stream
+  })
+  .catch(err => console.log(err))
 
-  selfConn.onicecandidate = event => {
-    console.log('got candidates', event.candidate)
-    if (event.candidate) {
-      console.log('sending candidate')
-      socket.emit('sendingCandidates', JSON.stringify(event.candidate))
+function createPeerConnection (name, targetPeer) {
+  let conn = new RTCPeerConnection(configuration)
+  let iceArray = []
+  conn.onicecandidate = event => {
+    console.log('gathering cand', event.candidate)
+    if (!event.candidate && iceArray.length > 0) {
+      let msg = {
+        name: name,
+        type: 'ice-candidate',
+        target: targetPeer,
+        candidate: iceArray
+      }
+      sendToServer(msg)
+      iceCandidates[targetPeer] = iceArray
+      iceArray = []
+    } else {
+      iceArray.push(event.candidate)
     }
   }
-  selfConn.onnegotiationneeded = handleNegotiationOffer
-
-  if (hasAddTrack) {
-    selfConn.ontrack = handleTrackEvent
-  } else {
-    selfConn.onaddstream = handleAddStreamEvent
+  conn.onnegotiationneeded = () => {
+    const offerOptions = {
+      offerToReceiveVideo: 1
+    }
+    conn.createOffer(offerOptions)
+      .then((x) => {
+        console.log('created offer', x)
+        conn.setLocalDescription(x)
+        let msg = {
+          name: name,
+          type: 'video-offer',
+          target: targetPeer,
+          sdp: x
+        }
+        console.log('sending offer')
+        sendToServer(msg)
+      // socket.emit('newOffer', JSON.stringify(x))
+      })
   }
-
-  peerConn = selfConn
-  return peerConn
-}
-
-function handleAddStreamEvent (event) {
-  vid1.srcObject = event.stream
-}
-function handleTrackEvent (event) {
-  console.log('*** Track event')
-  vid1.srcObject = event.streams[0]
-}
-function handleNegotiationOffer () {
-  const offerOptions = {
-    offerToReceiveVideo: 1
+  conn.ontrack = event => {
+    vid2.srcObject = event.streams[0]
   }
-  peerConn.createOffer(offerOptions)
-    .then((x) => {
-      console.log('created offer', x)
-      peerConn.setLocalDescription(x)
-      socket.emit('newOffer', JSON.stringify(x))
-    })
+  return conn
 }
 
-// function handleVideoOffer (conn, offer) {
-//   let _Offer = JSON.parse(offer)
-//   let desc = new RTCSessionDescription(_Offer)
-//   console.log(desc)
-//   // if (hasAddTrack) {
-//   //   console.log('-- Adding tracks to the RTCPeerConnection')
-//   //   localStream.getTracks().forEach(track => selfConn.addTrack(track, localStream))
-//   // } else {
-//   //   console.log('-- Adding stream to the RTCPeerConnection')
-//   //   selfConn.addStream(localStream)
-//   // }
-//   conn.setRemoteDescription(desc)
-//     .then(
-//       () => {
-//         navigator.mediaDevices.getUserMedia(constraints)
-//           .then(stream => {
-//             vid1.srcObject = stream
-//             return conn.addStream(stream)
-//           }).catch(err => console.log(err))
-//       },
-//       err => console.log(err)
-//     )
-// }
-var client2 = null
 function handleVideoAnswer (conn, answer) {
-  let ans = JSON.parse(answer)
-  let desc = new RTCSessionDescription(ans)
-  conn.setRemoteDescription(desc)
-    .then(
-      () => console.log('remote desc set, connection established'),
-      err => console.log(err))
-}
-socket.on('receiveOffer', function (offer) {
-  console.log('offer received')
-  let conn = new RTCPeerConnection(configuration)
-  client2 = conn
-  //
-  let _Offer = JSON.parse(offer)
-  let desc = new RTCSessionDescription(_Offer)
-  console.log(desc)
+  let desc = new RTCSessionDescription(answer.sdp)
   conn.setRemoteDescription(desc)
     .then(
       () => {
-        return navigator.mediaDevices.getUserMedia(constraints)
+        console.log('remote desc set, connection established')
+        connections[answer.name].self.addStream(localStream)
       },
       err => console.log(err))
-    .then(stream => {
-      vid1.srcObject = stream
-      conn.addStream(stream)
-    })
-    .then(() => conn.createAnswer())
-    .then(x => {
-      conn.setLocalDescription(x).then(
-        () => socket.emit('receiveAnswer', JSON.stringify(x)),
-        err => console.log(err)
-      )
-    },
-    err => console.log(err))
-})
+}
 
 socket.on('receiveAnswer', function (answer) {
+  let ans = JSON.parse(answer)
   console.log('received answer on client')
-  handleVideoAnswer(client2, answer)
+  handleVideoAnswer(connections[ans.name].self, ans)
 })
 
-socket.on('receiveCandidates', function (candidates) {
-  console.log('received candidates', candidates)
-  let cand = new RTCIceCandidate(JSON.parse(candidates))
-  peerConn.addIceCandidate(cand).then(
-    () => console.log('ice candidate added'),
-    err => console.log(err)
-  )
+let connections = {}
+let iceCandidates = {}
+function handleIceCandidates (data) {
+  console.log(data)
+  iceCandidates[data.name] = data.candidate
+  data.candidate.forEach(elem => {
+    let cand = new RTCIceCandidate(elem)
+    connections[data.name].self.addIceCandidate(cand).then(
+      () => console.log('ice candidate added'),
+      err => console.log(err)
+    )
+  })
+}
+
+function handleOfferReceived (data) {
+  console.log('handling offer received')
+  let conn = createPeerConnection('bob', data.name)
+  let _Offer = data.sdp
+  let desc = new RTCSessionDescription(_Offer)
+  console.log(desc)
+  conn.setRemoteDescription(desc)
+    .then(() => {
+      console.log('creating answer')
+      return conn.createAnswer()
+    })
+    .then(x => {
+      conn.setLocalDescription(x)
+        .then(
+          () => {
+            let nmsg = {
+              name: 'bob',
+              type: 'video-answer',
+              sdp: x,
+              target: data.name
+            }
+            sendToServer(nmsg)
+            // socket.emit('receiveAnswer', JSON.stringify(x))
+          },
+          err => console.log(err)
+        )
+    },
+    err => console.log(err))
+  connections[data.name] = {self: conn, other: undefined}
+}
+socket.on('receiveCandidates', function (msg) {
+  let data = JSON.parse(msg)
+  handleIceCandidates(data)
+})
+
+socket.on('receiveOffer', function (msg) {
+  console.log('offer received', msg)
+  let data = JSON.parse(msg)
+  handleOfferReceived(data)
+})
+
+function startCall (target) {
+  let user = document.getElementById('userName').value
+  let roomId = document.getElementById('roomId').value
+
+  let selfConn = createPeerConnection(user, target)
+  selfConn.addStream(localStream)
+  console.log(selfConn)
+  connections[target] = {self: selfConn, other: undefined}
+}
+
+document.getElementById('connectBtn').addEventListener('click', (event) => {
+  console.log('clicked')
+  let user = document.getElementById('userName').value
+  let roomId = document.getElementById('roomId').value
+  // socket.emit('joinroom', {user: user, roomId: roomId})
+  startCall('bob')
 })
