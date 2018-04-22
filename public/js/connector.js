@@ -81,7 +81,7 @@ function handleVideoAnswer (conn, answer) {
     .then(
       () => {
         console.log('remote desc set, connection established')
-        connections[answer.name].self.addStream(localStream)
+        // connections[answer.name].self.addStream(localStream)
       },
       err => console.log(err))
 }
@@ -109,6 +109,7 @@ function handleIceCandidates (data) {
 function handleOfferReceived (data) {
   console.log('handling offer received')
   let conn = createPeerConnection('bob', data.name)
+  conn.addStream(localStream)
   let _Offer = data.sdp
   let desc = new RTCSessionDescription(_Offer)
   console.log(desc)
