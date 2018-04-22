@@ -26,20 +26,36 @@ io.on('connection', function (socket) {
     })
   })
 
-  socket.on('newOffer', function (data) {
-    console.log('new offer on server')
-    socket.broadcast.emit('receiveOffer', data)
+  socket.on('request', function (data) {
+    let req = JSON.parse(data)
+    switch (req.type) {
+      case 'ice-candidate':
+        console.log('received candidate on server')
+        socket.broadcast.emit('receiveCandidates', data)
+        break
+      case 'video-offer':
+        console.log('new offer on server')
+        socket.broadcast.emit('receiveOffer', data)
+        break
+      case 'video-answer':
+        console.log('answer received on server')
+        socket.broadcast.emit('receiveAnswer', data)
+    }
   })
+  // socket.on('newOffer', function (data) {
+  //   console.log('new offer on server')
+  //   socket.broadcast.emit('receiveOffer', data)
+  // })
 
-  socket.on('receiveAnswer', function (answer) {
-    console.log('answer received on server')
-    socket.broadcast.emit('receiveAnswer', answer)
-  })
+  // socket.on('receiveAnswer', function (answer) {
+  //   console.log('answer received on server')
+  //   socket.broadcast.emit('receiveAnswer', answer)
+  // })
 
-  socket.on('sendingCandidates', function (candidates) {
-    console.log('received candidate on server')
-    socket.broadcast.emit('receiveCandidates', candidates)
-  })
+  // socket.on('sendingCandidates', function (candidates) {
+  //   console.log('received candidate on server')
+  //   socket.broadcast.emit('receiveCandidates', candidates)
+  // })
 })
 
 http.listen(process.env.PORT || 3000, function () {
