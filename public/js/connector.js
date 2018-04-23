@@ -17,6 +17,8 @@ let constraints = {
 
 let vid1 = document.getElementById('selfVideo')
 let vid2 = document.getElementById('otherVideo')
+let startBtn = document.getElementById('startFeed')
+let stopBtn = document.getElementById('stopFeed')
 
 function sendToServer (msg) {
   console.log('sending')
@@ -30,12 +32,24 @@ socket.on('broadcast', function (msg) {
 
 let localStream = null
 
-navigator.mediaDevices.getUserMedia(constraints)
-  .then(stream => {
-    localStream = stream
-    vid1.srcObject = stream
+function startLocalVideo () {
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(stream => {
+      localStream = stream
+      vid1.srcObject = stream
+    })
+    .catch(err => console.log(err))
+}
+
+function stopLocalVideo () {
+  let tracks = localStream.getTracks()
+  tracks.forEach(track => {
+    track.stop()
   })
-  .catch(err => console.log(err))
+}
+
+startBtn.addEventListener('click', startLocalVideo)
+stopBtn.addEventListener('click', stopLocalVideo)
 
 function createPeerConnection (name, targetPeer) {
   let conn = new RTCPeerConnection(configuration)
@@ -107,7 +121,9 @@ function handleIceCandidates (data) {
 function handleOfferReceived (data) {
   console.log('handling offer received')
   let conn = createPeerConnection('bob', data.name)
-  conn.addStream(localStream)
+  localStream.getTracks().forEach(track => {
+    conn.addTrack(track, localStream)
+  })
   let _Offer = data.sdp
   let desc = new RTCSessionDescription(_Offer)
   console.log(desc)
@@ -140,7 +156,9 @@ function startCall (target) {
   let roomId = document.getElementById('roomId').value
 
   let selfConn = createPeerConnection(user, target)
-  selfConn.addStream(localStream)
+  localStream.getTracks().forEach(track => {
+    selfConn.addTrack(track, localStream)
+  })
   console.log(selfConn)
   connections[target] = {self: selfConn, other: undefined}
 }
