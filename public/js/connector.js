@@ -6,7 +6,13 @@ let configuration = {
   }]
 }
 let constraints = {
-  video: true
+  video: {
+    width: 640,
+    height: 480,
+    frameRate: { ideal: 20, max: 30 },
+    facingMode: 'user'
+  },
+  audio: true
 }
 
 let vid1 = document.getElementById('selfVideo')
@@ -35,7 +41,7 @@ function createPeerConnection (name, targetPeer) {
   let conn = new RTCPeerConnection(configuration)
   let iceArray = []
   conn.onicecandidate = event => {
-    console.log('gathering cand', event.candidate)
+    console.log('gathering cand')
     if (!event.candidate && iceArray.length > 0) {
       let msg = {
         name: name,
@@ -81,7 +87,6 @@ function handleVideoAnswer (conn, answer) {
     .then(
       () => {
         console.log('remote desc set, connection established')
-        // connections[answer.name].self.addStream(localStream)
       },
       err => console.log(err))
 }
