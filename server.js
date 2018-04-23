@@ -31,31 +31,17 @@ io.on('connection', function (socket) {
     switch (req.type) {
       case 'ice-candidate':
         console.log('received candidate on server')
-        socket.broadcast.emit('receiveCandidates', data)
+        socket.broadcast.emit('receiver', data)
         break
       case 'video-offer':
         console.log('new offer on server')
-        socket.broadcast.emit('receiveOffer', data)
+        socket.broadcast.emit('receiver', data)
         break
       case 'video-answer':
         console.log('answer received on server')
-        socket.broadcast.emit('receiveAnswer', data)
+        socket.broadcast.emit('receiver', data)
     }
   })
-  // socket.on('newOffer', function (data) {
-  //   console.log('new offer on server')
-  //   socket.broadcast.emit('receiveOffer', data)
-  // })
-
-  // socket.on('receiveAnswer', function (answer) {
-  //   console.log('answer received on server')
-  //   socket.broadcast.emit('receiveAnswer', answer)
-  // })
-
-  // socket.on('sendingCandidates', function (candidates) {
-  //   console.log('received candidate on server')
-  //   socket.broadcast.emit('receiveCandidates', candidates)
-  // })
 })
 
 http.listen(process.env.PORT || 3000, function () {

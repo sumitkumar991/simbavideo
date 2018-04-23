@@ -72,7 +72,6 @@ function createPeerConnection (name, targetPeer) {
         }
         console.log('sending offer')
         sendToServer(msg)
-      // socket.emit('newOffer', JSON.stringify(x))
       })
   }
   conn.ontrack = event => {
@@ -90,12 +89,6 @@ function handleVideoAnswer (conn, answer) {
       },
       err => console.log(err))
 }
-
-socket.on('receiveAnswer', function (answer) {
-  let ans = JSON.parse(answer)
-  console.log('received answer on client')
-  handleVideoAnswer(connections[ans.name].self, ans)
-})
 
 let connections = {}
 let iceCandidates = {}
@@ -134,7 +127,6 @@ function handleOfferReceived (data) {
               target: data.name
             }
             sendToServer(nmsg)
-            // socket.emit('receiveAnswer', JSON.stringify(x))
           },
           err => console.log(err)
         )
@@ -142,16 +134,6 @@ function handleOfferReceived (data) {
     err => console.log(err))
   connections[data.name] = {self: conn, other: undefined}
 }
-socket.on('receiveCandidates', function (msg) {
-  let data = JSON.parse(msg)
-  handleIceCandidates(data)
-})
-
-socket.on('receiveOffer', function (msg) {
-  console.log('offer received', msg)
-  let data = JSON.parse(msg)
-  handleOfferReceived(data)
-})
 
 function startCall (target) {
   let user = document.getElementById('userName').value
@@ -169,4 +151,21 @@ document.getElementById('connectBtn').addEventListener('click', (event) => {
   let roomId = document.getElementById('roomId').value
   // socket.emit('joinroom', {user: user, roomId: roomId})
   startCall('bob')
+})
+
+socket.on('receiver', function (response) {
+  let resp = JSON.parse(response)
+  switch (resp.type) {
+    case 'ice-candidate':
+      handleIceCandidates(resp)
+      break
+    case 'video-offer':
+      console.log('offer received', resp)
+      handleOfferReceived(resp)
+      break
+    case 'video-answer':
+      console.log('received answer on client')
+      handleVideoAnswer(connections[resp.name].self, resp)
+      break
+  }
 })
