@@ -2,7 +2,6 @@ module.exports = class ConnectionHandler {
   constructor (io) {
     this.ioConn = io
     this.connections = {}
-    this.activeRooms = []
   }
 
   getRoom (socket) {
@@ -64,6 +63,19 @@ module.exports = class ConnectionHandler {
   }
 
   getActiveRooms () {
-    return this.activeRooms
+    return Object.keys(this.connections)
+  }
+
+  getClients (room) {
+    return Object.keys(this.connections[room])
+  }
+  sendClientList (socket) {
+    let room = this.getRoom(socket)
+    socket.emit('broadcast', this.getClients(room))
+  }
+  // removes the disconnected user from connections
+  removeUser (room, name) {
+    delete this.connections[room][name]
+    this.ioConn.to(room).emit('broadcast', `${name} has left the room`)
   }
 }
