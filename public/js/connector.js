@@ -12,7 +12,7 @@ const constraints = {
     frameRate: { ideal: 20, max: 30 },
     facingMode: 'user'
   },
-  audio: true
+   audio: true
 }
 const _get = x => document.getElementById(x)
 let userData = {
@@ -167,6 +167,7 @@ function joinRoom () {
   const name = _get('userName').value
   const room = _get('roomId').value
   userData.name = name
+  socket.emit('attach-name', userData.name) // attaches name to server socket
   console.log(name, room)
   if (name === undefined || room === '') {
     console.log('name & room are required')
