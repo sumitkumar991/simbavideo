@@ -1,11 +1,11 @@
-let socket = io()
-let STUN_SERVER = 'stun:stun.l.google.com:19302'
-let configuration = {
+const socket = io()
+const STUN_SERVER = 'stun:stun.l.google.com:19302'
+const configuration = {
   'iceServers': [{
     'urls': 'stun:stun.l.google.com:19302'
   }]
 }
-let constraints = {
+const constraints = {
   video: {
     width: 640,
     height: 480,
@@ -14,7 +14,10 @@ let constraints = {
   },
   audio: true
 }
-
+const _get = x => document.getElementById(x)
+let userData = {
+  name: null
+}
 let vid1 = document.getElementById('selfVideo')
 let vid2 = document.getElementById('otherVideo')
 let startBtn = document.getElementById('startFeed')
@@ -47,9 +50,6 @@ function stopLocalVideo () {
     track.stop()
   })
 }
-
-startBtn.addEventListener('click', startLocalVideo)
-stopBtn.addEventListener('click', stopLocalVideo)
 
 function createPeerConnection (name, targetPeer) {
   let conn = new RTCPeerConnection(configuration)
@@ -120,7 +120,7 @@ function handleIceCandidates (data) {
 
 function handleOfferReceived (data) {
   console.log('handling offer received')
-  let conn = createPeerConnection('bob', data.name)
+  let conn = createPeerConnection(userData.name, data.name)
   localStream.getTracks().forEach(track => {
     conn.addTrack(track, localStream)
   })
@@ -137,7 +137,7 @@ function handleOfferReceived (data) {
         .then(
           () => {
             let nmsg = {
-              name: 'bob',
+              name: userData.name,
               type: 'video-answer',
               sdp: x,
               target: data.name
@@ -163,14 +163,32 @@ function startCall (target) {
   connections[target] = {self: selfConn, other: undefined}
 }
 
-document.getElementById('connectBtn').addEventListener('click', (event) => {
-  console.log('clicked')
-  let user = document.getElementById('userName').value
-  let roomId = document.getElementById('roomId').value
-  // socket.emit('joinroom', {user: user, roomId: roomId})
-  startCall('bob')
-})
+function joinRoom () {
+  const name = _get('userName').value
+  const room = _get('roomId').value
+  userData.name = name
+  console.log(name, room)
+  if (name === undefined || room === '') {
+    console.log('name & room are required')
+  } else {
+    const req = {
+      type: 'join-room',
+      name: name,
+      roomId: room
+    }
+    sendToServer(req)
+  }
+}
 
+function initializeHandlers () {
+  _get('connectBtn').addEventListener('click', (event) => {
+    console.log('connecting')
+    startCall(_get('targetUser').value)
+  })
+  _get('joinRoom').addEventListener('click', joinRoom)
+  startBtn.addEventListener('click', startLocalVideo)
+  stopBtn.addEventListener('click', stopLocalVideo)
+}
 socket.on('receiver', function (response) {
   let resp = JSON.parse(response)
   switch (resp.type) {
@@ -187,3 +205,5 @@ socket.on('receiver', function (response) {
       break
   }
 })
+
+initializeHandlers()
