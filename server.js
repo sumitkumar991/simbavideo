@@ -13,10 +13,18 @@ app.get('/', function (req, res) {
 
 io.on('connection', function (socket) {
   console.log('a client connected')
+  socket.on('attach-name', function (name) {
+    // attach name to socket to identify on disconnection
+    socket.username = name
+  })
+  socket.on('disconnecting', function (reason) {
+    if (socket.username != null) {
+      let room = Object.keys(socket.rooms)[0]
+      Handler.removeUser(room, socket.username)
+    }
+  })
   socket.on('disconnect', function (reason) {
-    let rooms = Object.keys(socket.rooms)
-    console.log('disconnected', rooms)
-    io.to(rooms[0]).emit('broadcast', ` has disconnected`)
+    console.log('disconnected')
   })
 
   socket.on('request', function (data) {
@@ -38,6 +46,10 @@ io.on('connection', function (socket) {
       case 'video-answer':
         console.log('answer received on server')
         Handler.relayVideoAnswer(socket, req)
+        break
+      case 'client-list':
+        console.log('getting client list')
+        Handler.sendClientList(socket)
     }
   })
 })
