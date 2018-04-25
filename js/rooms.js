@@ -16,17 +16,21 @@ module.exports = class ConnectionHandler {
     let roomId = data.roomId
     let room = this.connections[roomId]
     if (room != null) {
-      if (Object.keys(room).length >= 10) {
-        // cannot join room
-        socket.emit('broadcast', `${data.roomId} is already full`)
+      if (room[data.name] === undefined) {
+        if (Object.keys(room).length >= 10) {
+          // cannot join room
+          socket.emit('broadcast', `${data.roomId} is already full`)
+        } else {
+          socket.join(roomId, err => {
+            if (err != null) console.log(err)
+            else {
+              room[data.name] = socket
+              this.ioConn.to(roomId).emit('broadcast', `${data.name} has joined the room`)
+            }
+          })
+        }
       } else {
-        socket.join(roomId, err => {
-          if (err != null) console.log(err)
-          else {
-            room[data.name] = socket
-            this.ioConn.to(roomId).emit('broadcast', `${data.name} has joined the room`)
-          }
-        })
+        socket.emit('broadcast', `You are already member in this room ${roomId}`)
       }
     } else {
       socket.join(roomId, err => {
@@ -51,6 +55,12 @@ module.exports = class ConnectionHandler {
   }
 
   relayVideoOffer (socket, data) {
+    let room = this.getRoom(socket)
+    let targetSocket = this.getSocket(room, data.target)
+    this.relayToReceiver(targetSocket, data)
+  }
+
+  relayOfferRejection (socket, data) {
     let room = this.getRoom(socket)
     let targetSocket = this.getSocket(room, data.target)
     this.relayToReceiver(targetSocket, data)
