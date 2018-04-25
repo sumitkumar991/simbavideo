@@ -12,7 +12,7 @@ const constraints = {
     frameRate: { ideal: 20, max: 30 },
     facingMode: 'user'
   },
-   audio: true
+  audio: true
 }
 const _get = x => document.getElementById(x)
 let userData = {
@@ -108,47 +108,64 @@ let connections = {}
 let iceCandidates = {}
 function handleIceCandidates (data) {
   console.log(data)
-  iceCandidates[data.name] = data.candidate
-  data.candidate.forEach(elem => {
-    let cand = new RTCIceCandidate(elem)
-    connections[data.name].self.addIceCandidate(cand).then(
-      () => console.log('ice candidate added'),
-      err => console.log(err)
-    )
-  })
+  if (connections[data.name] !== undefined) {
+    iceCandidates[data.name] = data.candidate
+    data.candidate.forEach(elem => {
+      let cand = new RTCIceCandidate(elem)
+      connections[data.name].self.addIceCandidate(cand).then(
+        () => console.log('ice candidate added'),
+        err => console.log(err)
+      )
+    })
+  }
 }
 
 function handleOfferReceived (data) {
   console.log('handling offer received')
-  let conn = createPeerConnection(userData.name, data.name)
-  localStream.getTracks().forEach(track => {
-    conn.addTrack(track, localStream)
-  })
-  let _Offer = data.sdp
-  let desc = new RTCSessionDescription(_Offer)
-  console.log(desc)
-  conn.setRemoteDescription(desc)
-    .then(() => {
-      console.log('creating answer')
-      return conn.createAnswer()
+  if (confirm(`${data.name} is calling`)) {
+    let conn = createPeerConnection(userData.name, data.name)
+    localStream.getTracks().forEach(track => {
+      conn.addTrack(track, localStream)
     })
-    .then(x => {
-      conn.setLocalDescription(x)
-        .then(
-          () => {
-            let nmsg = {
-              name: userData.name,
-              type: 'video-answer',
-              sdp: x,
-              target: data.name
-            }
-            sendToServer(nmsg)
-          },
-          err => console.log(err)
-        )
-    },
-    err => console.log(err))
-  connections[data.name] = {self: conn, other: undefined}
+    let _Offer = data.sdp
+    let desc = new RTCSessionDescription(_Offer)
+    console.log(desc)
+    conn.setRemoteDescription(desc)
+      .then(() => {
+        console.log('creating answer')
+        return conn.createAnswer()
+      })
+      .then(x => {
+        conn.setLocalDescription(x)
+          .then(
+            () => {
+              let nmsg = {
+                name: userData.name,
+                type: 'video-answer',
+                sdp: x,
+                target: data.name
+              }
+              sendToServer(nmsg)
+            },
+            err => console.log(err)
+          )
+      },
+      err => console.log(err))
+    connections[data.name] = {self: conn, other: undefined}
+  } else {
+    const response = {
+      name: userData.name,
+      type: 'reject-offer',
+      target: data.name
+    }
+    sendToServer(response)
+  }
+}
+
+function handleOfferRejected (data) {
+  connections[data.name].self.close()
+  delete connections[data.name]
+  alert(`terminated connection with ${data.name}`)
 }
 
 function startCall (target) {
@@ -199,6 +216,9 @@ socket.on('receiver', function (response) {
     case 'video-offer':
       console.log('offer received', resp)
       handleOfferReceived(resp)
+      break
+    case 'reject-offer':
+      handleOfferRejected(resp)
       break
     case 'video-answer':
       console.log('received answer on client')
