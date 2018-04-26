@@ -36,12 +36,15 @@ socket.on('broadcast', function (msg) {
 let localStream = null
 
 function startLocalVideo () {
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then(stream => {
-      localStream = stream
-      vid1.srcObject = stream
-    })
-    .catch(err => console.log(err))
+  return new Promise((resolve, reject) => {
+    navigator.mediaDevices.getUserMedia(constraints)
+      .then(stream => {
+        localStream = stream
+        vid1.srcObject = stream
+        resolve(localStream)
+      })
+      .catch(err => console.log(err))
+  })
 }
 
 function stopLocalVideo () {
@@ -76,7 +79,7 @@ function createPeerConnection (name, targetPeer) {
     }
     conn.createOffer(offerOptions)
       .then((x) => {
-        console.log('created offer', x)
+        console.log('created offer')
         conn.setLocalDescription(x)
         let msg = {
           name: name,
@@ -90,6 +93,14 @@ function createPeerConnection (name, targetPeer) {
   }
   conn.ontrack = event => {
     vid2.srcObject = event.streams[0]
+  }
+  conn.onconnectionstatechange = event => {
+    console.log('connection state change', conn.connectionState)
+    switch (conn.connectionState) {
+      case 'closed':
+        alert('connection closed')
+        break
+    }
   }
   return conn
 }
@@ -107,7 +118,6 @@ function handleVideoAnswer (conn, answer) {
 let connections = {}
 let iceCandidates = {}
 function handleIceCandidates (data) {
-  console.log(data)
   if (connections[data.name] !== undefined) {
     iceCandidates[data.name] = data.candidate
     data.candidate.forEach(elem => {
@@ -124,12 +134,15 @@ function handleOfferReceived (data) {
   console.log('handling offer received')
   if (confirm(`${data.name} is calling`)) {
     let conn = createPeerConnection(userData.name, data.name)
+    // startLocalVideo()
+    //   .then(() => {
+
+    //   })
     localStream.getTracks().forEach(track => {
       conn.addTrack(track, localStream)
     })
     let _Offer = data.sdp
     let desc = new RTCSessionDescription(_Offer)
-    console.log(desc)
     conn.setRemoteDescription(desc)
       .then(() => {
         console.log('creating answer')
@@ -169,15 +182,26 @@ function handleOfferRejected (data) {
 }
 
 function startCall (target) {
-  let user = document.getElementById('userName').value
-  let roomId = document.getElementById('roomId').value
+  if (target === '') {
+    console.log('callee cannot be empty')
+  } else {
+    console.log('connecting')
+    startLocalVideo()
+      .then(() => {
+        let user = document.getElementById('userName').value
+        let selfConn = createPeerConnection(user, target)
+        localStream.getTracks().forEach(track => {
+          selfConn.addTrack(track, localStream)
+        })
+        connections[target] = {self: selfConn}
+      })
+  }
+}
 
-  let selfConn = createPeerConnection(user, target)
-  localStream.getTracks().forEach(track => {
-    selfConn.addTrack(track, localStream)
-  })
-  console.log(selfConn)
-  connections[target] = {self: selfConn, other: undefined}
+function disconnectCall (target) {
+  connections[target].self.close()
+  delete connections[target]
+  alert(`call with ${target} disconnected`)
 }
 
 function joinRoom () {
@@ -200,13 +224,17 @@ function joinRoom () {
 
 function initializeHandlers () {
   _get('connectBtn').addEventListener('click', (event) => {
-    console.log('connecting')
     startCall(_get('targetUser').value)
+  })
+  _get('disconnectBtn').addEventListener('click', event => {
+    console.log('disconnecting')
+    disconnectCall(_get('targetUser').value)
   })
   _get('joinRoom').addEventListener('click', joinRoom)
   startBtn.addEventListener('click', startLocalVideo)
   stopBtn.addEventListener('click', stopLocalVideo)
 }
+
 socket.on('receiver', function (response) {
   let resp = JSON.parse(response)
   switch (resp.type) {
