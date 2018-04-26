@@ -8,8 +8,13 @@ module.exports = class ConnectionHandler {
     return Object.keys(socket.rooms)[0]
   }
 
+  getNestedObj (dataObj, patharr) {
+    return patharr.reduce((obj, key) => {
+      return (obj && obj[key] != null ? obj[key] : undefined)
+    }, dataObj)
+  }
   getSocket (room, target) {
-    return this.connections[room][target]
+    return this.getNestedObj(this.connections, [room, target])
   }
 
   joinRoom (socket, data) {
@@ -45,7 +50,9 @@ module.exports = class ConnectionHandler {
   }
 
   relayToReceiver (socket, data) {
-    socket.emit('receiver', JSON.stringify(data))
+    if (socket != null) {
+      socket.emit('receiver', JSON.stringify(data))
+    }
   }
 
   relayIceCandidate (socket, data) {
