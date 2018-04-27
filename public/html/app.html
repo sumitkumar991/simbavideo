@@ -1,31 +1,54 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Realtime communication with WebRTC</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- <link rel="stylesheet" type="text/css" media="screen" href="main.css" /> -->
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css" />
 </head>
+
 <body>
-  <video id="selfVideo" autoplay></video>
-  <video id="otherVideo" autoplay></video>
-  <button type="button" id="startFeed">Start</button>
-  <button type="button" id="stopFeed">Stop</button>
-  <form>
-    <fieldset>
-      <input id="userName" type="text" name="username" placeholder="Enter Name">
-      <input id="roomId" type="text" name="room" placeholder="Enter Room">
-      <button type="button" id="joinRoom">join</button>
-    </fieldset>
-    <fieldset>
-      <input id="targetUser" type="text" placeholder="Connect to">
-      <button type="button" id = "connectBtn">connect</button>
-      <button type="button" id = "disconnectBtn">disconnect</button>
-    </fieldset>    
-  </form>
+  <div class="columns">
+    <div class="column  is-one-fifth ">
+      <button type="button" id="startFeed">Start</button>
+      <button type="button" id="stopFeed">Stop</button>
+      <div class="field">
+        <label class="label">Name</label>
+        <div class="control">
+          <input id="userName" type="text" name="username" placeholder="eg Alex">
+        </div>
+        <label class="label">Room</label>
+        <div class="control">
+          <input id="roomId" type="text" name="room" placeholder="GeekyRoom">
+        </div>
+      </div>
+      <div class="field">
+
+      </div>
+      <div class="control">
+        <button class="button is-primary" id="joinRoom">join</button>
+      </div>
+      <br>
+      <div>
+        <p class="menu-label">
+          Online Now
+        </p>
+        <ul class="menu-list" id="online">
+
+        </ul>
+      </div>
+    </div>
+    <div class="column">
+      <video id="selfVideo" autoplay></video>
+      <video id="otherVideo" autoplay></video>
+    </div>
+  </div>
+
   <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="../js/connector.js" type="text/javascript"></script>
 </body>
+
 </html>

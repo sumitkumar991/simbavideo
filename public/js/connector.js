@@ -9,7 +9,10 @@ const constraints = {
   video: {
     width: 640,
     height: 480,
-    frameRate: { ideal: 20, max: 30 },
+    frameRate: {
+      ideal: 20,
+      max: 30
+    },
     facingMode: 'user'
   },
   audio: true
@@ -95,7 +98,6 @@ function createPeerConnection (name, targetPeer) {
     vid2.srcObject = event.streams[0]
   }
   conn.onconnectionstatechange = event => {
-    console.log('connection state change', conn.connectionState)
     switch (conn.connectionState) {
       case 'closed':
         alert('connection closed')
@@ -117,6 +119,7 @@ function handleVideoAnswer (conn, answer) {
 
 let connections = {}
 let iceCandidates = {}
+
 function handleIceCandidates (data) {
   if (connections[data.name] !== undefined) {
     iceCandidates[data.name] = data.candidate
@@ -134,10 +137,6 @@ function handleOfferReceived (data) {
   console.log('handling offer received')
   if (confirm(`${data.name} is calling`)) {
     let conn = createPeerConnection(userData.name, data.name)
-    // startLocalVideo()
-    //   .then(() => {
-
-    //   })
     localStream.getTracks().forEach(track => {
       conn.addTrack(track, localStream)
     })
@@ -164,7 +163,10 @@ function handleOfferReceived (data) {
           )
       },
       err => console.log(err))
-    connections[data.name] = {self: conn, other: undefined}
+    connections[data.name] = {
+      self: conn,
+      other: undefined
+    }
   } else {
     const response = {
       name: userData.name,
@@ -181,7 +183,8 @@ function handleOfferRejected (data) {
   alert(`terminated connection with ${data.name}`)
 }
 
-function startCall (target) {
+function startCall (event) {
+  let target = event.target.value
   if (target === '') {
     console.log('callee cannot be empty')
   } else {
@@ -193,12 +196,15 @@ function startCall (target) {
         localStream.getTracks().forEach(track => {
           selfConn.addTrack(track, localStream)
         })
-        connections[target] = {self: selfConn}
+        connections[target] = {
+          self: selfConn
+        }
       })
   }
 }
 
-function disconnectCall (target) {
+function disconnectCall (event) {
+  let target = event.target.value
   connections[target].self.close()
   delete connections[target]
   alert(`call with ${target} disconnected`)
@@ -209,7 +215,6 @@ function joinRoom () {
   const room = _get('roomId').value
   userData.name = name
   socket.emit('attach-name', userData.name) // attaches name to server socket
-  console.log(name, room)
   if (name === undefined || room === '') {
     console.log('name & room are required')
   } else {
@@ -235,6 +240,38 @@ function initializeHandlers () {
   stopBtn.addEventListener('click', stopLocalVideo)
 }
 
+function createUserElement (name) {
+  let li = document.createElement('li')
+  let html = ['<li>',
+    '<div class="columns">',
+    '<div class="column"><a>' + name + '</a></div>',
+    '<div class="column">',
+    '<button name="callBtn" class="button is-small is-success" value="' + name + '">call</button>',
+    '</div>',
+    '<div class="column">',
+    '<button name="hangupBtn" class="button is-small is-danger" value="' + name + '">Hang up</button>',
+    '</div>',
+    '</div>',
+    '</li>'
+  ].join('\n')
+  li.innerHTML = html
+  return li
+}
+
+function populateOnlineList (clientArr) {
+  let list = clientArr.filter(x => x !== userData.name).map(x => createUserElement(x))
+  let dom = _get('online')
+  while (dom.firstChild) dom.removeChild(dom.firstChild)
+  list.forEach(element => {
+    dom.appendChild(element)
+  })
+  document.getElementsByName('callBtn').forEach(btn => {
+    btn.addEventListener('click', startCall)
+  })
+  document.getElementsByName('hangupBtn').forEach(btn => {
+    btn.addEventListener('click', disconnectCall)
+  })
+}
 socket.on('receiver', function (response) {
   let resp = JSON.parse(response)
   switch (resp.type) {
@@ -252,6 +289,9 @@ socket.on('receiver', function (response) {
       console.log('received answer on client')
       handleVideoAnswer(connections[resp.name].self, resp)
       break
+    case 'client-list':
+      console.log('received client list')
+      populateOnlineList(resp.clients)
   }
 })
 
