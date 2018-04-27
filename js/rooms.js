@@ -58,6 +58,7 @@ module.exports = class ConnectionHandler {
   }
 
   relayIceCandidate (socket, data) {
+    console.log('target', data.target)
     let room = this.getRoom(socket)
     let targetSocket = this.getSocket(room, data.target)
     this.relayToReceiver(targetSocket, data)
