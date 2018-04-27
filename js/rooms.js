@@ -31,6 +31,7 @@ module.exports = class ConnectionHandler {
             else {
               room[data.name] = socket
               this.ioConn.to(roomId).emit('broadcast', `${data.name} has joined the room`)
+              this.sendClientListToRoom(roomId)
             }
           })
         }
@@ -43,7 +44,8 @@ module.exports = class ConnectionHandler {
         else {
           this.connections[roomId] = {}
           this.connections[roomId][data.name] = socket
-          this.ioConn.to(roomId).emit('broadcast', `${data.name} has joined the room`)
+          this.ioConn.to(roomId).emit('broadcast', `${data.name} has joined the room ${roomId}`)
+          this.sendClientListToRoom(roomId)
         }
       })
     }
@@ -88,11 +90,23 @@ module.exports = class ConnectionHandler {
   }
   sendClientList (socket) {
     let room = this.getRoom(socket)
-    socket.emit('broadcast', this.getClients(room))
+    socket.emit('receiver', JSON.stringify({
+      type: 'client-list',
+      clients: this.getClients(room)
+    })
+    )
+  }
+
+  sendClientListToRoom (room) {
+    this.ioConn.to(room).emit('receiver', JSON.stringify({
+      type: 'client-list',
+      clients: this.getClients(room)
+    }))
   }
   // removes the disconnected user from connections
   removeUser (room, name) {
     delete this.connections[room][name]
     this.ioConn.to(room).emit('broadcast', `${name} has left the room`)
+    this.sendClientListToRoom(room)
   }
 }
