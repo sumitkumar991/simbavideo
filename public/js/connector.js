@@ -205,9 +205,11 @@ function startCall (event) {
 
 function disconnectCall (event) {
   let target = event.target.value
-  connections[target].self.close()
-  delete connections[target]
-  alert(`call with ${target} disconnected`)
+  if (connections[target] != null) {
+    connections[target].self.close()
+    delete connections[target]
+    alert(`call with ${target} disconnected`)
+  }
 }
 
 function joinRoom () {
@@ -228,13 +230,6 @@ function joinRoom () {
 }
 
 function initializeHandlers () {
-  _get('connectBtn').addEventListener('click', (event) => {
-    startCall(_get('targetUser').value)
-  })
-  _get('disconnectBtn').addEventListener('click', event => {
-    console.log('disconnecting')
-    disconnectCall(_get('targetUser').value)
-  })
   _get('joinRoom').addEventListener('click', joinRoom)
   startBtn.addEventListener('click', startLocalVideo)
   stopBtn.addEventListener('click', stopLocalVideo)
