@@ -43,6 +43,9 @@ io.on('connection', function (socket) {
         console.log('new offer on server')
         Handler.relayVideoOffer(socket, req)
         break
+      case 'reject-offer':
+        Handler.relayOfferRejection(socket, req)
+        break
       case 'video-answer':
         console.log('answer received on server')
         Handler.relayVideoAnswer(socket, req)
