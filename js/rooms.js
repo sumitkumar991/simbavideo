@@ -88,6 +88,7 @@ module.exports = class ConnectionHandler {
   }
 
   getClients (room) {
+    if (this.connections[room] == null) return []
     return Object.keys(this.connections[room])
   }
   sendClientList (socket) {
@@ -107,7 +108,7 @@ module.exports = class ConnectionHandler {
   }
   // removes the disconnected user from connections
   removeUser (room, name) {
-    delete this.connections[room][name]
+    delete this.getNestedObj(this.connections, [room, name])
     this.ioConn.to(room).emit('broadcast', `${name} has left the room`)
     this.sendClientListToRoom(room)
   }
