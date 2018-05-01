@@ -5,7 +5,8 @@ module.exports = class ConnectionHandler {
   }
 
   getRoom (socket) {
-    return Object.keys(socket.rooms)[0]
+    // get the room user is subscribed to
+    return Object.keys(socket.rooms).filter(x => x !== socket.id)[0]
   }
 
   getNestedObj (dataObj, patharr) {
