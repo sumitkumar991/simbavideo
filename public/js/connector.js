@@ -22,9 +22,20 @@ let userData = {
   name: null
 }
 let vid1 = document.getElementById('selfVideo')
-let vid2 = document.getElementById('otherVideo')
+let peer1 = document.getElementById('peer1')
+let peer2 = document.getElementById('peer2')
+let peer3 = document.getElementById('peer3')
+let peers = [peer1, peer2, peer3]
+
 let startBtn = document.getElementById('startFeed')
 let stopBtn = document.getElementById('stopFeed')
+
+function getFreePeer (arr) {
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i].srcObject == null) return arr[i]
+  }
+  return null
+}
 
 function sendToServer (msg) {
   console.log('sending')
@@ -100,9 +111,9 @@ function createPeerConnection (name, targetPeer) {
         sendToServer(msg)
       })
   }
-  conn.ontrack = event => {
-    vid2.srcObject = event.streams[0]
-  }
+  // conn.ontrack = event => {
+  //   getFreePeer(peers).srcObject = event.streams[0]
+  // }
   conn.onconnectionstatechange = event => {
     switch (conn.connectionState) {
       case 'closed':
@@ -143,6 +154,10 @@ function handleOfferReceived (data) {
   console.log('handling offer received')
   if (confirm(`${data.name} is calling`)) {
     let conn = createPeerConnection(userData.name, data.name)
+    let peer = getFreePeer(peers)
+    conn.ontrack = event => {
+      peer.srcObject = event.streams[0]
+    }
     localStream.getTracks().forEach(track => {
       conn.addTrack(track, localStream)
     })
@@ -171,7 +186,7 @@ function handleOfferReceived (data) {
       err => console.log(err))
     connections[data.name] = {
       self: conn,
-      other: undefined
+      vid: peer
     }
   } else {
     const response = {
@@ -213,6 +228,7 @@ function disconnectCall (event) {
   let target = event.target.value
   if (connections[target] != null) {
     connections[target].self.close()
+    connections[target].vid.srcObject = null
     delete connections[target]
     alert(`call with ${target} disconnected`)
   }
@@ -247,6 +263,7 @@ function createUserElement (name) {
     '<div class="columns">',
     '<div class="column"><a>' + name + '</a></div>',
     '<div class="column">',
+    // '<span class="icon"><i class="fas fa-home"></i></span>',
     '<button name="callBtn" class="button is-small is-success" value="' + name + '">call</button>',
     '</div>',
     '<div class="column">',
