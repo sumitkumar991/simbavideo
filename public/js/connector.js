@@ -40,15 +40,21 @@ let localStream = null
 
 function startLocalVideo () {
   return new Promise((resolve, reject) => {
-    navigator.mediaDevices.getUserMedia(constraints)
-      .then(stream => {
-        localStream = stream
-        vid1.srcObject = stream
-        resolve(localStream)
-      })
-      .catch(err => console.log(err))
+    if (localStream == null) {
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
+          localStream = stream
+          resolve(localStream)
+        })
+        .catch(err => console.log(err))
+    } else resolve(localStream)
   })
 }
+
+startLocalVideo()
+  .then(stream => {
+    vid1.srcObject = stream
+  })
 
 function stopLocalVideo () {
   let tracks = localStream.getTracks()
