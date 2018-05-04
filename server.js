@@ -18,8 +18,9 @@ io.on('connection', function (socket) {
     socket.username = name
   })
   socket.on('disconnecting', function (reason) {
+    console.log('disconnecting')
     if (socket.username != null) {
-      let room = Object.keys(socket.rooms)[0]
+      let room = Handler.getRoom(socket)
       Handler.removeUser(room, socket.username)
     }
   })
