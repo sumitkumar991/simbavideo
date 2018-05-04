@@ -203,6 +203,8 @@ function startCall (event) {
   let target = event.target.value
   if (target === '') {
     console.log('callee cannot be empty')
+  } else if (connections[target]) {
+    console.log('already on call')
   } else {
     console.log('connecting')
     startLocalVideo()
