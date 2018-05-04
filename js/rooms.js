@@ -108,7 +108,10 @@ module.exports = class ConnectionHandler {
   }
   // removes the disconnected user from connections
   removeUser (room, name) {
-    delete this.getNestedObj(this.connections, [room, name])
+    console.log('removing', name, ' from ', room)
+    if (this.getNestedObj(this.connections, [room, name])) {
+      delete this.connections[room][name]
+    }
     this.ioConn.to(room).emit('broadcast', `${name} has left the room`)
     this.sendClientListToRoom(room)
   }
