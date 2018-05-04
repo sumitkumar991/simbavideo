@@ -7,10 +7,10 @@ const configuration = {
 }
 const constraints = {
   video: {
-    width: 640,
-    height: 480,
+    width: {max: 640},
+    height: {max: 480},
     frameRate: {
-      ideal: 20,
+      ideal: 30,
       max: 30
     },
     facingMode: 'user'
@@ -25,7 +25,8 @@ let vid1 = document.getElementById('selfVideo')
 let peer1 = document.getElementById('peer1')
 let peer2 = document.getElementById('peer2')
 let peer3 = document.getElementById('peer3')
-let peers = [peer1, peer2, peer3]
+let peer4 = document.getElementById('peer4')
+let peers = [peer1, peer2, peer3, peer4]
 
 let startBtn = document.getElementById('startFeed')
 let stopBtn = document.getElementById('stopFeed')
@@ -111,9 +112,6 @@ function createPeerConnection (name, targetPeer) {
         sendToServer(msg)
       })
   }
-  // conn.ontrack = event => {
-  //   getFreePeer(peers).srcObject = event.streams[0]
-  // }
   conn.onconnectionstatechange = event => {
     switch (conn.connectionState) {
       case 'closed':
@@ -222,7 +220,8 @@ function startCall (event) {
           selfConn.addTrack(track, localStream)
         })
         connections[target] = {
-          self: selfConn
+          self: selfConn,
+          vid: peer
         }
       })
   }
@@ -267,7 +266,6 @@ function createUserElement (name) {
     '<div class="columns">',
     '<div class="column"><a>' + name + '</a></div>',
     '<div class="column">',
-    // '<span class="icon"><i class="fas fa-home"></i></span>',
     '<button name="callBtn" class="button is-small is-rounded is-success" value="' + name + '">call</button>',
     '</div>',
     '<div class="column">',
@@ -301,7 +299,7 @@ socket.on('receiver', function (response) {
       handleIceCandidates(resp)
       break
     case 'video-offer':
-      console.log('offer received', resp)
+      console.log('offer received')
       handleOfferReceived(resp)
       break
     case 'reject-offer':
