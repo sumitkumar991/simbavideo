@@ -214,6 +214,10 @@ function startCall (event) {
       .then(() => {
         let user = document.getElementById('userName').value
         let selfConn = createPeerConnection(user, target)
+        let peer = getFreePeer(peers)
+        selfConn.ontrack = event => {
+          peer.srcObject = event.streams[0]
+        }
         localStream.getTracks().forEach(track => {
           selfConn.addTrack(track, localStream)
         })
@@ -264,10 +268,10 @@ function createUserElement (name) {
     '<div class="column"><a>' + name + '</a></div>',
     '<div class="column">',
     // '<span class="icon"><i class="fas fa-home"></i></span>',
-    '<button name="callBtn" class="button is-small is-success" value="' + name + '">call</button>',
+    '<button name="callBtn" class="button is-small is-rounded is-success" value="' + name + '">call</button>',
     '</div>',
     '<div class="column">',
-    '<button name="hangupBtn" class="button is-small is-danger" value="' + name + '">Hang up</button>',
+    '<button name="hangupBtn" class="button is-small is-rounded is-danger" value="' + name + '">Hang up</button>',
     '</div>',
     '</div>',
     '</li>'
