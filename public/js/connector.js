@@ -28,9 +28,6 @@ let peer3 = document.getElementById('peer3')
 let peer4 = document.getElementById('peer4')
 let peers = [peer1, peer2, peer3, peer4]
 
-let startBtn = document.getElementById('startFeed')
-let stopBtn = document.getElementById('stopFeed')
-
 function getFreePeer (arr) {
   for (let i = 0; i < arr.length; i++) {
     if (arr[i].srcObject == null) return arr[i]
@@ -256,8 +253,6 @@ function joinRoom () {
 
 function initializeHandlers () {
   _get('joinRoom').addEventListener('click', joinRoom)
-  startBtn.addEventListener('click', startLocalVideo)
-  stopBtn.addEventListener('click', stopLocalVideo)
 }
 
 function createUserElement (name) {

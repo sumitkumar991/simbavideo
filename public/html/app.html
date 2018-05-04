@@ -12,11 +12,24 @@
 </head>
 
 <body>
-    <video id="selfVideo" autoplay></video>
+  <video id="selfVideo" autoplay></video>
   <div class="columns">
     <div class="column  is-one-fifth ">
-      <button type="button" id="startFeed">Start</button>
-      <button type="button" id="stopFeed">Stop</button>
+      <article class="message is-primary">
+        <div class="message-header">
+          <p>How to Use</p>
+        </div>
+        <div class="message-body">
+          <strong>Follow these simple steps:</strong>
+          <br>
+          <ol>
+            <li>Write your name & enter a room name to connect to</li>
+            <li>Click join button</li>
+          </ol>
+          <br>
+          <em>Click call button to connect to online users in this room.</em>
+        </div>
+      </article>
       <div class="field">
         <label class="label">Name</label>
         <div class="control">
@@ -26,9 +39,6 @@
         <div class="control">
           <input id="roomId" type="text" name="room" placeholder="GeekyRoom">
         </div>
-      </div>
-      <div class="field">
-
       </div>
       <div class="control">
         <button class="button is-primary" id="joinRoom">join</button>
